@@ -1,23 +1,30 @@
-package com.dream.view;
+package com.dream.view.model;
 
 import java.text.NumberFormat;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
 import com.dream.entity.StockData;
+import com.dream.entity.StockTimeSharingData;
 
 public class StockListModel extends DefaultTableModel {
-	private List<StockData> stockDatas;
+	private Map<String, StockData> stockDatas;
 	private String[] columnNames = { "代码", "名称", "当前价", "涨跌幅" };
+	private List stockPool;
 
-	public StockListModel(List<StockData> stockDatas) {
+	public StockListModel(List stockPool, Map<String, StockData> stockDatas) {
+		this.stockPool = stockPool;
 		this.stockDatas = stockDatas;
 	}
 	
-	public void setStockDatas(List<StockData> stockDatas){
+	public void setStockDatas(List stockPool, Map<String, StockData> stockDatas){
+		this.stockPool = stockPool;
 		this.stockDatas = stockDatas;
 	}
 
@@ -60,14 +67,15 @@ public class StockListModel extends DefaultTableModel {
 		// TODO Auto-generated method stub
 		switch (columnIndex) {
 		case 0:
-			return stockDatas.get(rowIndex).stockCode;
+			return stockDatas.get(stockPool.get(rowIndex)).stockCode;
 		case 1:
-			return stockDatas.get(rowIndex).stockName;
+			return stockDatas.get(stockPool.get(rowIndex)).stockName;
 		case 2:
-			return stockDatas.get(rowIndex).stockRealData.currentPrice;
+			return stockDatas.get(stockPool.get(rowIndex)).stockRealData.currentPrice;
 		case 3:
-			double currentPrint = stockDatas.get(rowIndex).stockRealData.currentPrice;
-			double lastClosePrint = stockDatas.get(rowIndex).stockRealData.lastClosePrice;
+			StockData stockData = stockDatas.get(stockPool.get(rowIndex));
+			double currentPrint = stockData.stockRealData.currentPrice;
+			double lastClosePrint = stockData.stockRealData.lastClosePrice;
 			double scope = (currentPrint - lastClosePrint) / lastClosePrint;
 			NumberFormat percentFormat = NumberFormat.getPercentInstance();
 			percentFormat.setMaximumFractionDigits(2);

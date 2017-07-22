@@ -1,4 +1,4 @@
-package com.dream.view;
+package com.dream.view.model;
 
 import com.dream.entity.StockData;
 import com.dream.entity.StockHandicapData;

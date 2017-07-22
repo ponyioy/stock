@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 
 import com.dream.entity.Stock1MinData;
 import com.dream.entity.StockRealData;
@@ -23,10 +24,10 @@ public class ReadXDTDataFile {
 
 	/**
 	 *
-	 * 一、通达信日线*.day文件 文件名即股票代码 每32个字节为一天数据 每4个字节为一个字段，每个字段内低字节在前 00 ~ 03 字节：年月日,
-	 * 整型 04 ~ 07 字节：开盘价*100， 整型 08 ~ 11 字节：最高价*100, 整型 12 ~ 15 字节：最低价*100, 整型
-	 * 16 ~ 19 字节：收盘价*100, 整型 20 ~ 23 字节：成交额（元），float型 24 ~ 27 字节：成交量（股），整型 28 ~
-	 * 31 字节：上日收盘*100, 整型
+	 * 一、通达信日线*.day文件 文件名即股票代码 每32个字节为一天数据 每4个字节为一个字段，每个字段内低字节在前 00 ~ 03
+	 * 字节：年月日,整型 04 ~ 07 字节：开盘价*100， 整型 08 ~ 11 字节：最高价*100, 整型 12 ~ 15
+	 * 字节：最低价*100, 整型 16 ~ 19 字节：收盘价*100, 整型 20 ~ 23 字节：成交额（元），float型 24 ~ 27
+	 * 字节：成交量（股），整型 28 ~ 31 字节：上日收盘*100, 整型
 	 * 
 	 * 
 	 * 二、通达信5分钟线*.lc5文件和*.lc1文件 文件名即股票代码 每32个字节为一个5分钟数据，每字段内低字节在前 00 ~ 01
@@ -58,7 +59,7 @@ public class ReadXDTDataFile {
 	 * @param date
 	 *            格式YYYYMMDD
 	 */
-	public static StockRealData readDayFileByBytes(String fileName, String date) throws FileNotFoundException {
+	private static StockRealData readDayFileByBytes(String fileName, String date) throws FileNotFoundException {
 		File file = new File(fileName);
 		if (!file.exists()) {
 			throw new FileNotFoundException();
@@ -68,23 +69,23 @@ public class ReadXDTDataFile {
 		try {
 			// 一次读多个字节
 			byte[] tempBytes = new byte[32];
-			int byteread = 0;
+			byte[] lastByteread = new byte[32];
 			in = new FileInputStream(fileName);
 			int temp = Integer.parseInt(date);
-			// 读入多个字节到字节数组中，byteread为一次读入的字节数
-			while ((byteread = in.read(tempBytes)) != -1) {
-				if (temp == bytesToInt(tempBytes, 0)) {
+			// 读入多个字节到字节数组中，tempBytes为一次读入的字节数
+			while (in.read(tempBytes) != -1) {
+				if (temp == bytes2Int(tempBytes, 0)) {
 					StockRealData sdd = new StockRealData();
-					sdd.openPrice = bytesToInt(tempBytes, 4) / 100;
-					sdd.closePrice = bytesToInt(tempBytes, 16) / 100;
-					sdd.highestPrice = bytesToInt(tempBytes, 8) / 100;
-					sdd.lowestPrice = bytesToInt(tempBytes, 12) / 100;
+					sdd.openPrice = (float) bytes2Int(tempBytes, 4) / 100;
+					sdd.closePrice = (float) bytes2Int(tempBytes, 16) / 100;
+					sdd.highestPrice = (float) bytes2Int(tempBytes, 8) / 100;
+					sdd.lowestPrice = (float) bytes2Int(tempBytes, 12) / 100;
 					sdd.turnover = byte2float(tempBytes, 20);
-					sdd.volume = bytesToInt(tempBytes, 24);
-					sdd.lastClosePrice = bytesToInt(tempBytes, 28) / 100;
+					sdd.volume = bytes2Int(tempBytes, 24);
+					sdd.lastClosePrice = (float) bytes2Int(lastByteread, 16) / 100;
 					return sdd;
-
 				}
+				lastByteread = tempBytes.clone();
 
 				// System.out.println(num +" "+ bytesToInt(tempBytes, 4));
 			}
@@ -115,7 +116,18 @@ public class ReadXDTDataFile {
 			fileName = LC1_FILE_SH_PATH + "sh" + stockCode + LC1_SUFFIX;
 		else
 			fileName = LC1_FILE_SZ_PATH + "sz" + stockCode + LC1_SUFFIX;
-		return readMinFileByBytes(fileName, date);
+		StockTimeSharingData stockTimeSharingData = readMinFileByBytes(fileName, date);
+		if (stockTimeSharingData == null) {
+			System.out.println(stockCode + "没有数据");
+			return null;
+		}
+		stockTimeSharingData.stockCode = stockCode;
+		// if(readLastClosePriceFlag){
+		// StockRealData srd = getStockDayData(stockCode, date);
+		// if(srd != null)
+		// stockTimeSharingData.lastDayClosePrice = srd.lastClosePrice;
+		// }
+		return stockTimeSharingData;
 	}
 
 	/**
@@ -124,9 +136,10 @@ public class ReadXDTDataFile {
 	 * @param date
 	 *            格式yyyymmdd
 	 */
-	public static StockTimeSharingData readMinFileByBytes(String fileName, String date) throws FileNotFoundException {
+	private static StockTimeSharingData readMinFileByBytes(String fileName, String date) throws FileNotFoundException {
 		File file = new File(fileName);
 		if (!file.exists()) {
+			System.err.println(fileName);
 			throw new FileNotFoundException();
 		}
 		InputStream in = null;
@@ -147,9 +160,12 @@ public class ReadXDTDataFile {
 			in = new FileInputStream(fileName);
 			StockTimeSharingData stockTimeSharingData = new StockTimeSharingData(date);
 			// 读入多个字节到字节数组中，byteread为一次读入的字节数
+
+			boolean firstMatch = true;
+
 			while ((byteread = in.read(tempBytes)) != -1) {
 
-				int num = bytesToInt(tempBytes, 0);
+				int num = bytes2Int(tempBytes, 0);
 
 				int mins = (num >> 16);
 				int mds = num & 0xffff;
@@ -160,15 +176,24 @@ public class ReadXDTDataFile {
 				int month1 = (int) Math.floor(Math.floorMod(mds, 2048) / 100);
 				int day1 = Math.floorMod(Math.floorMod(mds, 2048), 100);
 
+//				System.out.println(year1+"-"+ month1 + "-"+ day1+" "+hour+":"+minute);
 				// System.out.println(year1 + " " + month1 + " " + day1);
 
 				if (year == year1 && month == month1 && day == day1) {
+//					 System.out.println(year1 + " " + month1 + " " + day1);
+					if (firstMatch) {// 第一次匹配获取上次数据
+						stockTimeSharingData.lastDayClosePrice = byte2float(skipBytes, 238 * 32 + 16);
+						firstMatch = false;
+					}
 					Stock1MinData smd = new Stock1MinData();
 					smd.hour = (short) hour;
 					smd.minute = (short) minute;
 					smd.price = byte2float(tempBytes, 16);
-					smd.volume = bytesToInt(tempBytes, 24);
+					smd.volume = bytes2Int(tempBytes, 24) / 100;
 					stockTimeSharingData.stock1MinDatas.put(String.format("%04d", hour * 100 + minute), smd);
+					// System.out.println(String.format("%04d", hour * 100 +
+					// minute));
+					// System.out.println(JSON.toJSONString(stockTimeSharingData.stock1MinDatas));
 
 					// System.out.println(hour + ":" + minute + " " +
 					// smd.price);
@@ -182,6 +207,15 @@ public class ReadXDTDataFile {
 				// System.out.println(hour);
 				// System.out.println(minute);
 			}
+
+			// List<Map.Entry<String, Stock1MinData>> infoIds = new
+			// ArrayList<Map.Entry<String,
+			// Stock1MinData>>(stockTimeSharingData.stock1MinDatas.entrySet());
+			// // 排序前
+			// for (int i = 0; i < infoIds.size(); i++) {
+			// String id = infoIds.get(i).toString();
+			// System.out.println(id);
+			// }
 			if (stockTimeSharingData.stock1MinDatas.size() != 0)
 				return stockTimeSharingData;
 			else
@@ -229,14 +263,27 @@ public class ReadXDTDataFile {
 	 *            从数组的第offset位开始
 	 * @return int数值
 	 */
-	public static int bytesToInt(byte[] ary, int offset) {
+	public static int bytes2Int(byte[] ary, int offset) {
 		int value;
 		value = (int) ((ary[offset] & 0xFF) | ((ary[offset + 1] << 8) & 0xFF00) | ((ary[offset + 2] << 16) & 0xFF0000)
 				| ((ary[offset + 3] << 24) & 0xFF000000));
 		return value;
 	}
 
+	public static byte[] int2Byte(int n) {
+		byte[] b = new byte[4];
+		b[0] = (byte) (n & 0xff);
+		b[1] = (byte) (n >> 8 & 0xff);
+		b[2] = (byte) (n >> 16 & 0xff);
+		b[3] = (byte) (n >> 24 & 0xff);
+		return b;
+	}
+
+	public static byte[] float2Byte(float f) {
+        return int2Byte(Float.floatToIntBits(f));
+	}
+
 	public static void main(String[] args) throws FileNotFoundException {
-		getStock1MinData("000877", "20170705");
+		ReadXDTDataFile.getStock1MinData("603799", "20170714");
 	}
 }

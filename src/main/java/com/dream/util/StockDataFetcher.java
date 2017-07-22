@@ -5,7 +5,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.dream.entity.StockData;
 import com.dream.exception.StockDataException;
@@ -19,7 +21,7 @@ public class StockDataFetcher {
     public static final String URL_MONTHLY_PREMIX = "http://image.sinajs.cn/newchart/monthly/n/";
     public static final String URL_IMAGE_SUFFIX = ".gif";
 
-    public static List<StockData> fetchStockData(List<String> stockCodes) throws StockDataException {
+    public static Map<String, StockData> fetchStockData(List<String> stockCodes) throws StockDataException {
         StringBuffer url = new StringBuffer(URL_PREMIX);
         for (int i = 0; i < stockCodes.size(); i++) {
 //			if(stockCodes.get(i).charAt(0) == '6')
@@ -38,10 +40,10 @@ public class StockDataFetcher {
     ;
 
 
-    private static List<StockData> analyseRespondData(List<String> stockCodes, String information) throws StockDataException {
+    private static Map<String, StockData> analyseRespondData(List<String> stockCodes, String information) throws StockDataException {
         if (information == null || information.length() == 0)
             return null;
-        List<StockData> stockDatas = new ArrayList();
+        Map<String, StockData> stockDatas = new HashMap<String, StockData>();
         String[] orgResult = information.split("=");
         if (stockCodes.size() != orgResult.length - 1) {
             throw new StockDataException();
@@ -99,7 +101,7 @@ public class StockDataFetcher {
                 sd.time = result[31];
             }
 
-            stockDatas.add(sd);
+            stockDatas.put(stockCodes.get(i), sd);
         }
         return stockDatas;
     }

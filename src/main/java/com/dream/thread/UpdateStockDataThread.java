@@ -1,6 +1,7 @@
 package com.dream.thread;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JTable;
 
@@ -9,7 +10,7 @@ import com.dream.entity.TimeSharingDataPool;
 import com.dream.exception.StockDataException;
 import com.dream.handle.ViewHandle;
 import com.dream.util.StockDataFetcher;
-import com.dream.view.StockListModel;
+import com.dream.view.model.StockListModel;
 import com.dream.watch.TimeSharingWatch;
 
 public class UpdateStockDataThread implements Runnable {
@@ -27,7 +28,7 @@ public class UpdateStockDataThread implements Runnable {
 		int i = 0;
 		while(true){
 			try {
-				List<StockData> stockDatas = StockDataFetcher.fetchStockData(stockCodes);
+				Map<String, StockData> stockDatas = StockDataFetcher.fetchStockData(stockCodes);
 				viewHandle.doStockDataUpdate(stockDatas);
 				
 				//更新分时数据

@@ -121,10 +121,10 @@ public class TimeseriesPlot {
 			combinedDomainXYPlot.add(pricePlot, timeseriesArea.getPriceWeight());
 		}
 
-		if (timeseriesArea.getVolumeWeight() > 0) {
-			XYPlot volumePlot = createVolumePlot();
-			combinedDomainXYPlot.add(volumePlot, timeseriesArea.getVolumeWeight());
-		}
+//		if (timeseriesArea.getVolumeWeight() > 0) {
+//			XYPlot volumePlot = createVolumePlot();
+//			combinedDomainXYPlot.add(volumePlot, timeseriesArea.getVolumeWeight());
+//		}
 
 		// combinedDomainXYPlot2.add(combinedDomainXYPlot1);
 		return combinedDomainXYPlot;
@@ -143,12 +143,14 @@ public class TimeseriesPlot {
 		XYLineAndShapeRenderer priceRenderer = new XYLineAndShapeRenderer(true, false);
 		priceAxis.setUpperBound(logicPriceAxis.getUpperBound());
 		priceAxis.setLowerBound(logicPriceAxis.getLowerBound());
+		priceAxis.setTickLabelsVisible(false);
 		priceRenderer.setSeriesPaint(0, priceArea.getPriceColor());
 		priceRenderer.setSeriesPaint(1, priceArea.getAverageColor());
 
 		TimeseriesNumberAxis rateAxis = new TimeseriesNumberAxis(logicPriceAxis.getRatelogicTicks());
 		rateAxis.setUpperBound(logicPriceAxis.getUpperBound());
 		rateAxis.setLowerBound(logicPriceAxis.getLowerBound());	
+		rateAxis.setTickLabelsVisible(false);
 
 		XYPlot plot = new XYPlot(priceDataset, null, priceAxis, priceRenderer);
 		plot.setBackgroundPaint(priceArea.getBackgroudColor());
@@ -180,6 +182,7 @@ public class TimeseriesPlot {
 		volumeAxis.setUpperBound(logicVolumeAxis.getUpperBound());
 		volumeAxis.setLowerBound(logicVolumeAxis.getLowerBound());
 		volumeAxis.setAutoRangeIncludesZero(false);
+		volumeAxis.setTickLabelsVisible(false);
 		XYBarRenderer volumeRenderer = new XYBarRenderer();
 		volumeRenderer.setSeriesPaint(0, volumeArea.getVolumeColor());
 		volumeRenderer.setShadowVisible(false);

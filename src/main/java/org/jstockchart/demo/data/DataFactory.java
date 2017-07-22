@@ -72,21 +72,25 @@ public class DataFactory {
 		Map<String, Stock1MinData> stock1MinDatas = stockTimeSharingData.stock1MinDatas;
 		String strDate = stockTimeSharingData.date;
 		Iterator iter = stock1MinDatas.entrySet().iterator();
+		Calendar calendar = Calendar.getInstance();
 		while (iter.hasNext()) {
 			Map.Entry entry = (Map.Entry) iter.next();
-			Stock1MinData stock1MinData = (Stock1MinData)entry.getValue();
+			Stock1MinData stock1MinData = (Stock1MinData) entry.getValue();
 			int hour = stock1MinData.hour;
 			int minute = stock1MinData.minute;
 
-			if (hour <= stockTimeSharingData.currentHour && minute <= stockTimeSharingData.currentMinute) {
-				Date date = new Date(StringUtil.getYear(strDate), StringUtil.getYear(strDate),
-						StringUtil.getYear(strDate), hour, minute);
-				TimeseriesItem t = new TimeseriesItem(date, stock1MinData.price,
+			if (hour * 100 + minute <= stockTimeSharingData.currentHour * 100 + stockTimeSharingData.currentMinute) {
+				// Date date = new Date(StringUtil.getYear(strDate),
+				// StringUtil.getYear(strDate),
+				// StringUtil.getYear(strDate), hour, minute);
+				calendar.set(StringUtil.getYear(strDate), StringUtil.getMonth(strDate), StringUtil.getDay(strDate),
+						hour, minute);
+				TimeseriesItem t = new TimeseriesItem(calendar.getTime(), stock1MinData.price,
 						(double) stock1MinData.volume);
 				result.add(t);
 			}
 		}
-		System.out.println(JSON.toJSONString(result));
+//		System.out.println(stockTimeSharingData.stockCode + ";" + JSON.toJSONString(result));
 		return result;
 	}
 
